@@ -2,7 +2,7 @@
 import { ConversationProvider, useConversation } from '@elevenlabs/react';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, AudioLines, Check, ChevronRight, Headphones, Menu, Mic, MicOff, Phone, PhoneOff, ShieldCheck, Sparkles, Stethoscope, X } from 'lucide-react';
-const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
+const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || 'agent_0501m6etpx8tef9tp7pyjxmyv86g';
 const notice = 'This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created.';
 export default function Home(){return <ConversationProvider><Experience/></ConversationProvider>}
 function Experience() {

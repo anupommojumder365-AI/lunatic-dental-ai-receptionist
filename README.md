@@ -10,7 +10,7 @@ npm ci
 cp .env.example .env.local
 npm run dev
 ```
-Set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` to the existing public Lunatic Dental Clinic agent ID. It is a public identifier, not an API key. Never put credentials in NEXT_PUBLIC variables. No agent is created or modified by this app. An authenticated agent requires a server-side signed-session implementation before use; that mode is not implemented.
+The existing clinic agent `agent_0501m6etpx8tef9tp7pyjxmyv86g` is configured as the default. Set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` to override this public identifier. It is a public identifier, not an API key. Never put credentials in NEXT_PUBLIC variables. No agent is created or modified by this app. An authenticated agent requires a server-side signed-session implementation before use; that mode is not implemented.
 
 ```sh
 npm run typecheck
