@@ -21,7 +21,7 @@ npm start
 ## Architecture
 `app/page.tsx` contains the responsive landing page and client conversation component inside the official SDK provider. `app/globals.css` supplies the responsive theme, reduced-motion support and connection-driven animations. Tailwind CSS v4 is configured through PostCSS. There is no database or booking integration. Transcripts remain in component memory. ElevenLabs processes conversation audio under its own settings and policies.
 
-Replace `public/receptionist.jpg` to update both portrait placements. The current temporary portrait is a crop of the public-domain NASA Eileen Collins image distributed by scikit-image (v0.22.0, skimage/data/astronaut.png). It is an illustrative placeholder, not a clinic employee or endorsement; replace with a suitable receptionist portrait before publication.
+Replace `public/receptionist.jpg` to update both portrait placements. The portrait is a locally stored Unsplash image (photo-1580489944761-15a19d654956), used under the Unsplash license. It represents a demo persona, not a clinic employee or endorsement.
 
 ## Deployment
 Import this repository into Vercel using the Next.js preset. Set NEXT_PUBLIC_ELEVENLABS_AGENT_ID before building. Use the Hobby plan only where eligible. The browser requires HTTPS (or localhost) for microphone access. No private ElevenLabs key belongs in the browser. This project has not yet been deployed or tested with a real agent.
