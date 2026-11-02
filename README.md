@@ -24,7 +24,7 @@ npm start
 Replace `public/receptionist.jpg` to update both portrait placements. The portrait is a locally stored Unsplash image (photo-1580489944761-15a19d654956), used under the Unsplash license. It represents a demo persona, not a clinic employee or endorsement.
 
 ## Deployment
-Import this repository into Vercel using the Next.js preset. Set NEXT_PUBLIC_ELEVENLABS_AGENT_ID before building. Use the Hobby plan only where eligible. The browser requires HTTPS (or localhost) for microphone access. No private ElevenLabs key belongs in the browser. This project has not yet been deployed or tested with a real agent.
+Import this repository into Vercel using the Next.js preset. Set NEXT_PUBLIC_ELEVENLABS_AGENT_ID before building. Use the Hobby plan only where eligible. The browser requires HTTPS (or localhost) for microphone access. No private ElevenLabs key belongs in the browser. Vercel production deployment is configured in the anupom3 Hobby workspace. Public agent configuration and WebRTC session-token issuance were verified. A real browser microphone conversation remains untested. The Vercel GitHub App is not installed for this repository, so deployment uses a direct upload of committed source; pushes do not automatically deploy.
 
 ## Demo scope
 This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created.
