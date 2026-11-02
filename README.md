@@ -18,10 +18,13 @@ npm run build
 npm start
 ```
 
-## Architecture
-`app/page.tsx` contains the responsive landing page and client conversation component inside the official SDK provider. `app/globals.css` supplies the responsive theme, reduced-motion support and connection-driven animations. Tailwind CSS v4 is configured through PostCSS. There is no database or booking integration. Transcripts remain in component memory. ElevenLabs processes conversation audio under its own settings and policies.
+## Interface
+Desktop displays a large avatar on the left and the live voice panel on the right. At widths of 900px or less, the avatar sits above the panel. Transcript scrolling stays within the panel. There is no navigation, marketing content, services section, or footer. Suggested prompts are examples to speak aloud, not mock chat controls.
 
-Replace `public/receptionist.jpg` to update both portrait placements. The portrait is a locally stored Unsplash image (photo-1580489944761-15a19d654956), used under the Unsplash license. It represents a demo persona, not a clinic employee or endorsement.
+## Architecture
+`app/page.tsx` contains the single-screen 55/45 desktop avatar and voice panel and client conversation component inside the official SDK provider. `app/globals.css` supplies the responsive theme, reduced-motion support and connection-driven animations. Tailwind CSS v4 is configured through PostCSS. There is no database or booking integration. Transcripts remain in component memory. ElevenLabs processes conversation audio under its own settings and policies.
+
+Replace `public/receptionist.jpg` to update the prominent avatar. The portrait is a locally stored Unsplash image (photo-1580489944761-15a19d654956), used under the Unsplash license. It represents a demo persona, not a clinic employee or endorsement.
 
 ## Deployment
 Import this repository into Vercel using the Next.js preset. Set NEXT_PUBLIC_ELEVENLABS_AGENT_ID before building. Use the Hobby plan only where eligible. The browser requires HTTPS (or localhost) for microphone access. No private ElevenLabs key belongs in the browser. Vercel production deployment is configured in the anupom3 Hobby workspace. Public agent configuration and WebRTC session-token issuance were verified. A real browser microphone conversation remains untested. The Vercel GitHub App is not installed for this repository, so deployment uses a direct upload of committed source; pushes do not automatically deploy.
@@ -29,4 +32,4 @@ Import this repository into Vercel using the Next.js preset. Set NEXT_PUBLIC_ELE
 ## Demo scope
 This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created.
 
-Voice connection, speaking/listening state, transcript, mute and end-call controls are implemented against the SDK. Missing configuration produces an explicit error. No live voice or browser device tests have been performed. The waveform indicates conversation state and is not an audio amplitude measurement or lip synchronization.
+Voice connection, speaking/listening state, transcript, mute and end-call controls are implemented against the SDK. Permission denial, missing microphone, connection failures, and disconnecting have explicit UI states. No live voice or browser device tests have been performed. The waveform indicates conversation state and is not an audio amplitude measurement or lip synchronization.

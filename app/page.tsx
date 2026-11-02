@@ -1,24 +1,110 @@
 'use client';
+
 import { ConversationProvider, useConversation } from '@elevenlabs/react';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, AudioLines, Check, ChevronRight, Headphones, Menu, Mic, MicOff, Phone, PhoneOff, ShieldCheck, Sparkles, Stethoscope, X } from 'lucide-react';
+import { AudioLines, ArrowUpRight, Mic, MicOff, Phone, PhoneOff, LoaderCircle } from 'lucide-react';
+
 const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || 'agent_0501m6etpx8tef9tp7pyjxmyv86g';
-const notice = 'This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created.';
-export default function Home(){return <ConversationProvider><Experience/></ConversationProvider>}
+const prompts = ['What dental services do you offer?', 'What is a root canal treatment?', 'I want to request an appointment.'];
+type Message = { role: string; text: string };
+
+export default function Home() {
+  return <ConversationProvider><Experience /></ConversationProvider>;
+}
+
 function Experience() {
- const [messages,setMessages]=useState<{role:string;text:string}[]>([]); const [error,setError]=useState(''); const [starting,setStarting]=useState(false); const [muted,setMuted]=useState(false); const [menu,setMenu]=useState(false); const busy=useRef(false); const mounted=useRef(true); const transcript=useRef<HTMLDivElement>(null);
- const conversation=useConversation({micMuted:muted,onMessage:m=>setMessages(v=>[...v,{role:m.source==='user'?'You':'Receptionist',text:m.message}]),onError:()=>{setError('The voice connection failed. Please check your connection and try again.');},onDisconnect:()=>{busy.current=false;setStarting(false);}});
- const connected=conversation.status==='connected'; const pending=starting||conversation.status==='connecting';
- useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;void conversation.endSession();}},[]);
- useEffect(()=>{transcript.current?.scrollTo({top:transcript.current.scrollHeight,behavior:'smooth'});},[messages]);
- async function start(){if(busy.current||connected)return;setError('');if(!agentId){setError('Voice demo is awaiting the existing clinic Agent ID. No conversation has been started.');return;}busy.current=true;setStarting(true);setMuted(false);setMessages([]);try{if(!navigator.mediaDevices?.getUserMedia)throw new Error('Microphone access requires a supported browser and a secure HTTPS connection.');const stream=await navigator.mediaDevices.getUserMedia({audio:true});stream.getTracks().forEach(t=>t.stop());if(!mounted.current)return;await conversation.startSession({agentId,connectionType:'webrtc'});}catch(e){setError(e instanceof DOMException&&e.name==='NotAllowedError'?'Microphone permission was denied. Allow microphone access in your browser, then try again.':e instanceof Error?e.message:'Unable to start the call. Please try again.');}finally{busy.current=false;if(mounted.current)setStarting(false);}}
- async function end(){try{await conversation.endSession();}catch{setError('Unable to close the connection. Please reload the page.');}}
- const state=connected?(conversation.isSpeaking?'Speaking':muted?'Microphone muted':'Listening'):pending?'Connecting':'Ready when you are';
- return <><header><a className="brand" href="#home"><span className="brand-icon"><AudioLines size={22}/></span><span>LUNATIC<span className="brand-sub">DENTAL CLINIC</span></span></a><button className="mobile-menu" aria-label="Toggle navigation" aria-expanded={menu} onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button><nav className={menu?'open':''}><a href="#home" onClick={()=>setMenu(false)}>Home</a><a href="#services" onClick={()=>setMenu(false)}>Dental services</a><a href="#receptionist" onClick={()=>setMenu(false)}>AI receptionist</a><a href="#about" onClick={()=>setMenu(false)}>About the demo</a></nav><a className="nav-cta" href="#receptionist">Meet your receptionist <ArrowUpRight size={16}/></a></header>
- <main id="home"><section className="hero"><div className="hero-copy"><div className="eyebrow"><span className="dot"/> A NEW WAY TO CONNECT</div><h1>A warmer welcome.<br/><span>A smarter reception.</span></h1><p>Your questions, a natural conversation away. Meet the AI receptionist bringing a more human touch to dental care.</p><div className="hero-actions"><a href="#receptionist" className="button primary" onClick={()=>void start()}><Phone size={17}/> Start a conversation <ArrowUpRight size={17}/></a><a href="#how" className="text-link">See how it works <ChevronRight size={16}/></a></div><div className="hero-notes"><span><Check/> Natural voice conversations</span><span><Check/> No downloads needed</span></div><div className="portfolio-tag"><span className="tiny-line"/> BUILT AT THE INTERSECTION OF CARE & TECHNOLOGY</div></div><div className="hero-art"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="portrait-frame"><img src="/receptionist.jpg" alt="Professional receptionist portrait used for this AI demonstration" fetchPriority="high"/><div className="portrait-shade"/><div className="portrait-caption"><span className="mini-badge"><Sparkles size={13}/> YOUR AI RECEPTIONIST</span><h2>A friendly voice.<br/>Always here to listen.</h2></div></div><div className="float-card"><span className="float-icon"><AudioLines/></span><div>Care starts with a conversation<small>Powered by ElevenLabs voice AI</small></div></div><div className="live-label"><span className="dot"/> VOICE-FIRST EXPERIENCE</div></div></section>
- <section className="trust-strip"><span>Thoughtfully designed.<br/><strong>Naturally connected.</strong></span><div><Headphones/> Real-time voice</div><div><ShieldCheck/> Clear demo boundaries</div><div><Sparkles/> Human-centered design</div></section>
- <section id="receptionist" className="experience section"><div className="section-heading"><div className="eyebrow">THE CONVERSATION STARTS HERE</div><h2>Say hello to a better experience.</h2><p>Ask about dental services or explore a simulated appointment request.</p></div><div className="console"><div className="call-pane"><div className="console-top"><span><span className="dot"/> LUNATIC VOICE ASSISTANT</span><span className="demo-pill">LIVE DEMO</span></div><div className={`avatar ${connected?conversation.isSpeaking?'speaking':'listening':''}`}><img src="/receptionist.jpg" alt="AI receptionist avatar"/></div><h3>Your AI receptionist</h3><div className="status" role="status">{state}</div><div className={`wave ${connected&&!muted?'active':''} ${conversation.isSpeaking?'voice':''}`} aria-hidden="true">{Array.from({length:35},(_,i)=><i key={i} style={{height:`${8+Math.sin(i*1.7)**2*30}px`,animationDelay:`${i*.045}s`}}/>)}</div><div className="call-controls"><button className="button primary" disabled={pending||connected} onClick={()=>void start()}><Phone size={17}/>{pending?'Connecting…':connected?'Call connected':'Start conversation'}</button><button className="icon-button" disabled={!connected} onClick={()=>setMuted(!muted)} aria-label={muted?'Unmute microphone':'Mute microphone'} aria-pressed={muted}>{muted?<MicOff size={19}/>:<Mic size={19}/>}</button><button className="icon-button end" disabled={!connected} onClick={()=>void end()} aria-label="End call"><PhoneOff size={19}/></button></div><small className="mic-note"><Mic size={12}/> Your browser will ask for microphone access</small>{error&&<p className="error" role="alert">{error}</p>}</div><div className="transcript-pane"><div className="transcript-heading"><span><AudioLines size={17}/> Conversation</span><span>LIVE TRANSCRIPT</span></div><div className="transcript" ref={transcript} role="log" aria-live="polite" aria-label="Conversation transcript">{messages.length?messages.map((m,i)=><div className={`message ${m.role==='You'?'user':''}`} key={i}><small>{m.role}</small><p>{m.text}</p></div>):<div className="empty"><span><AudioLines size={28}/></span><h4>A little hello goes a long way.</h4><p>Start a conversation and your live transcript will appear here.</p><div className="suggestion">Try asking: “What dental services do you offer?”</div></div>}</div><div className="transcript-bottom"><ShieldCheck size={14}/> Voice is processed by ElevenLabs. Avoid sharing sensitive information.</div></div></div><p className="disclaimer">{notice}</p></section>
- <section id="services" className="section services"><div className="section-heading left"><div className="eyebrow">LET’S TALK ABOUT YOUR SMILE</div><h2>Care for the everyday.<br/>Confidence for what’s next.</h2><p>Explore the services our demo receptionist can discuss.</p></div><div className="service-grid">{['General Dental Checkups','Dental Fillings','Root Canal Treatment','Tooth Extraction'].map((s,i)=><article key={s}><span className="service-number">0{i+1}</span><Stethoscope className="service-icon"/><h3>{s}</h3><p>{['A conversation about routine visits and looking after your smile.','Learn about the service and discuss a simulated visit.','Ask general service questions in a calm, approachable setting.','Explore the service and what to ask a dental professional.'][i]}</p><a href="#receptionist">Ask our receptionist <ArrowUpRight size={16}/></a></article>)}</div></section>
- <section id="how" className="section how"><div className="section-heading"><div className="eyebrow">SIMPLE BY DESIGN</div><h2>Just speak. We’ll take it from there.</h2></div><div className="steps">{[['01','Make the connection','Start a conversation and allow your browser to use your microphone.'],['02','Speak naturally','Ask about the listed dental services or try a simulated appointment request.'],['03','Stay in control','Follow the transcript, mute your microphone, or end the call at any time.']].map(([n,t,d])=><div key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></div>)}</div></section>
- <section id="about" className="about"><div><div className="eyebrow">CARE MEETS CODE</div><h2>A glimpse of what thoughtful<br/>AI automation can do.</h2></div><div><p>A personal portfolio project exploring conversational AI for a dental reception experience. Built to demonstrate voice integration, responsive interfaces, and clear, useful interactions.</p><span>AI AUTOMATION ENGINEERING · PORTFOLIO DEMO</span></div></section></main><footer><a className="brand" href="#home"><span className="brand-icon"><AudioLines/></span><span>LUNATIC<span className="brand-sub">DENTAL CLINIC</span></span></a><p>AI Receptionist Demo · Built for possibility.</p><a href="#about">About this project <ArrowUpRight size={14}/></a></footer></>;
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState('');
+  const [starting, setStarting] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [permission, setPermission] = useState<'idle' | 'requesting' | 'granted'>('idle');
+  const busy = useRef(false);
+  const mounted = useRef(true);
+  const transcript = useRef<HTMLDivElement>(null);
+  const conversation = useConversation({
+    micMuted: muted,
+    onMessage: message => setMessages(current => [...current, {
+      role: message.source === 'user' ? 'You' : 'Receptionist', text: message.message,
+    }]),
+    onError: () => setError('The voice connection failed. Check your connection and try again.'),
+    onDisconnect: () => { setStarting(false); setEnding(false); },
+  });
+  const connected = conversation.status === 'connected';
+  const pending = starting || conversation.status === 'connecting';
+  const active = connected || pending || ending;
+  const state = ending ? 'disconnecting' : pending ? 'connecting' : connected ? conversation.isSpeaking ? 'speaking' : muted ? 'muted' : 'listening' : 'idle';
+  const labels = { idle: 'Ready to connect', connecting: permission === 'requesting' ? 'Waiting for microphone permission' : 'Connecting to receptionist', listening: 'Listening to you', speaking: 'Receptionist is speaking', muted: 'Microphone muted', disconnecting: 'Ending conversation' };
+  const endSession = useRef(conversation.endSession);
+  endSession.current = conversation.endSession;
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; void Promise.resolve().then(() => endSession.current()).catch(() => {}); };
+  }, []);
+  useEffect(() => {
+    transcript.current?.scrollTo({ top: transcript.current.scrollHeight, behavior: 'smooth' });
+  }, [messages]);
+
+  async function start() {
+    if (busy.current || active) return;
+    busy.current = true;
+    setStarting(true); setError(''); setMuted(false); setMessages([]);
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Use a supported browser with HTTPS to access your microphone.');
+      setPermission('requesting');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      if (!mounted.current) return;
+      setPermission('granted');
+      await conversation.startSession({ agentId, connectionType: 'webrtc' });
+      if (!mounted.current) await endSession.current();
+    } catch (cause) {
+      if (!mounted.current) return;
+      setPermission('idle');
+      setError(cause instanceof DOMException && cause.name === 'NotAllowedError'
+        ? 'Microphone access was denied. Allow access in your browser settings, then try again.'
+        : cause instanceof DOMException && cause.name === 'NotFoundError'
+          ? 'No microphone found. Connect a microphone and try again.'
+          : 'Unable to connect. Check your microphone and internet connection, then try again.');
+    } finally {
+      busy.current = false;
+      if (mounted.current) setStarting(false);
+    }
+  }
+
+  async function end() {
+    if (ending) return;
+    setEnding(true);
+    try { await conversation.endSession(); }
+    catch { setEnding(false); setError('Unable to end the call. Reload this page to close the connection.'); }
+  }
+
+  return <main className="demo" data-state={state}>
+    <section className="visual" aria-label="AI receptionist avatar">
+      <div className="ambient ambient-blue" /><div className="ambient ambient-violet" />
+      <div className="brand"><span className="brand-symbol"><AudioLines size={24} /></span><div>Lunatic Dental Clinic<span>AI RECEPTIONIST</span></div></div>
+      <div className="portrait">
+        <img src="/receptionist.jpg" alt="Female receptionist demo avatar" fetchPriority="high" />
+        <div className="portrait-shade" />
+        <div className="portrait-border" />
+      </div>
+      <div className="avatar-caption"><span className="avatar-label">YOUR AI RECEPTIONIST</span><div className="avatar-status"><span className="status-dot" />{labels[state]}</div><div className="wave" aria-hidden="true">{Array.from({ length: 37 }, (_, i) => <i key={i} style={{ height: `${8 + Math.sin(i * 1.7) ** 2 * 26}px`, animationDelay: `${i * .055}s` }} />)}</div></div>
+      <span className="visual-note">VOICE EXPERIENCE <span>01 / LIVE DEMO</span></span>
+    </section>
+
+    <section className="panel" aria-labelledby="panel-title">
+      <div className="panel-heading"><div className="eyebrow"><span /> LIVE VOICE TESTING</div><h1 id="panel-title">Talk to Our<br /><span>AI Receptionist.</span></h1><p>Speak naturally. Ask a question or try a simulated appointment request.</p></div>
+      <div className="session-controls">
+        <div className="connection-status" role="status"><span className="status-dot" />{labels[state]}<span className="connection-type">{connected ? 'CONNECTED' : pending ? 'CONNECTING' : 'VOICE AI'}</span></div>
+        <button className="start-button" disabled={active} onClick={() => void start()}>{pending ? <LoaderCircle className="spinner" size={19} /> : <Phone size={19} />}<span>{pending ? 'Connecting…' : connected ? 'Conversation in progress' : 'Start Conversation'}</span>{!active && <ArrowUpRight size={19} />}</button>
+        <div className="secondary-controls"><button disabled={!connected || ending} onClick={() => setMuted(value => !value)} aria-pressed={muted}>{muted ? <MicOff size={16} /> : <Mic size={16} />}{muted ? 'Unmute microphone' : 'Mute microphone'}</button><button className="end-button" disabled={!connected || ending} onClick={() => void end()}><PhoneOff size={16} />{ending ? 'Ending…' : 'End Conversation'}</button></div>
+        <p className="permission-note"><Mic size={12} />{permission === 'requesting' ? 'Choose Allow in your browser’s microphone prompt.' : connected ? muted ? 'Your microphone is muted.' : 'Microphone is on. You can speak now.' : 'Microphone permission is requested when you start.'}</p>
+        {error && <p className="error" role="alert">{error}</p>}
+      </div>
+      <div className="transcript-wrap"><div className="transcript-heading"><span><AudioLines size={15} /> Live transcript</span><span>{messages.length ? `${messages.length} MESSAGES` : 'YOUR CONVERSATION'}</span></div><div className="transcript" ref={transcript} role="log" aria-live="polite" aria-label="Live conversation transcript">{messages.length ? messages.map((message, index) => <div className={`message ${message.role === 'You' ? 'user' : ''}`} key={index}><small>{message.role}</small><p>{message.text}</p></div>) : <div className="empty-transcript"><AudioLines size={26} /><p>Your conversation starts here.</p><span>Start a call to see the live transcript.</span></div>}</div></div>
+      <div className="suggestions"><span>NOT SURE WHAT TO SAY? TRY ASKING</span><ul>{prompts.map(prompt => <li key={prompt}><span>“{prompt}”</span></li>)}</ul></div>
+      <p className="notice">This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created. <span>Audio is processed by ElevenLabs. Avoid sharing sensitive information.</span></p>
+    </section>
+  </main>;
 }
