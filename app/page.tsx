@@ -2,6 +2,7 @@
 
 import { ConversationProvider, useConversation } from '@elevenlabs/react';
 import { useEffect, useRef, useState } from 'react';
+import { useSimliAvatar } from './lib/use-simli-avatar';
 import { AudioLines, ArrowUpRight, Mic, MicOff, Phone, PhoneOff, LoaderCircle } from 'lucide-react';
 
 const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || 'agent_0501m6etpx8tef9tp7pyjxmyv86g';
@@ -21,14 +22,24 @@ function Experience() {
   const busy = useRef(false);
   const mounted = useRef(true);
   const transcript = useRef<HTMLDivElement>(null);
+  const stopConversation = useRef<() => void>(() => {});
+  const avatar = useSimliAvatar(() => {
+    setError('The live avatar connection ended. Please start a new conversation.');
+    stopConversation.current();
+  });
   const conversation = useConversation({
+    volume: 0, // Simli plays the generated ElevenLabs voice alongside its synchronized video.
+    onConversationCreated: session => session.setVolume({ volume: 0 }),
+    onAudio: avatar.sendAudio,
+    onInterruption: avatar.interrupt,
     micMuted: muted,
     onMessage: message => setMessages(current => [...current, {
       role: message.source === 'user' ? 'You' : 'Receptionist', text: message.message,
     }]),
-    onError: () => setError('The voice connection failed. Check your connection and try again.'),
-    onDisconnect: () => { setStarting(false); setEnding(false); },
+    onError: () => { avatar.finish(); stopConversation.current(); setError('The voice connection failed. Check your connection and try again.'); },
+    onDisconnect: () => { avatar.finish(); setStarting(false); setEnding(false); },
   });
+  stopConversation.current = conversation.endSession;
   const connected = conversation.status === 'connected';
   const pending = starting || conversation.status === 'connecting';
   const active = connected || pending || ending;
@@ -56,16 +67,19 @@ function Experience() {
       stream.getTracks().forEach(track => track.stop());
       if (!mounted.current) return;
       setPermission('granted');
+      await avatar.start();
+      if (!mounted.current) { avatar.finish(); return; }
       await conversation.startSession({ agentId, connectionType: 'webrtc' });
       if (!mounted.current) await endSession.current();
     } catch (cause) {
+      avatar.finish();
       if (!mounted.current) return;
       setPermission('idle');
       setError(cause instanceof DOMException && cause.name === 'NotAllowedError'
         ? 'Microphone access was denied. Allow access in your browser settings, then try again.'
         : cause instanceof DOMException && cause.name === 'NotFoundError'
           ? 'No microphone found. Connect a microphone and try again.'
-          : 'Unable to connect. Check your microphone and internet connection, then try again.');
+          : 'Unable to connect to the live avatar and receptionist. Check your connection and try again.');
     } finally {
       busy.current = false;
       if (mounted.current) setStarting(false);
@@ -75,6 +89,7 @@ function Experience() {
   async function end() {
     if (ending) return;
     setEnding(true);
+    avatar.finish();
     try { await conversation.endSession(); }
     catch { setEnding(false); setError('Unable to end the call. Reload this page to close the connection.'); }
   }
@@ -82,11 +97,14 @@ function Experience() {
   return <main className="demo" data-state={state}>
     <section className="visual" aria-label="AI receptionist avatar">
       <div className="brand"><span>AI RECEPTIONIST</span><h2>Lunatic Dental Clinic</h2><p>Meet your AI receptionist. Ask questions about dental services or request an appointment through a natural voice conversation.</p></div>
-      <div className="portrait">
-        <img src="/receptionist.jpg" alt="Female receptionist demo avatar" fetchPriority="high" />
+      <div className="portrait simli-portrait">
+        <video ref={avatar.video} autoPlay playsInline muted aria-label="Live Simli receptionist avatar" className={avatar.status === 'ready' ? 'simli-video visible' : 'simli-video'} />
+        <audio ref={avatar.audio} autoPlay onCanPlay={avatar.playAudio} onError={avatar.fail} />
+        {avatar.status !== 'ready' && <div className="avatar-placeholder"><AudioLines size={32} /><p>{avatar.status === 'connecting' ? 'Connecting live avatar…' : 'Your live receptionist'}</p><span>{avatar.status === 'connecting' ? 'Preparing synchronized video and voice' : 'The avatar appears when you start a conversation.'}</span></div>}
         <div className="portrait-border" />
       </div>
-      <div className="avatar-caption"><div className="avatar-status"><span className="status-dot" />{labels[state]}</div><div className="wave" aria-hidden="true">{Array.from({ length: 37 }, (_, i) => <i key={i} style={{ height: `${8 + Math.sin(i * 1.7) ** 2 * 26}px`, animationDelay: `${i * .055}s` }} />)}</div></div>
+      {avatar.playbackBlocked && <button className="avatar-audio-button" onClick={avatar.playAudio}>Enable avatar audio</button>}
+      <div className="avatar-caption"><div className="avatar-status"><span className="status-dot" />{avatar.status === 'connecting' ? 'Connecting live avatar' : avatar.speaking ? 'Receptionist is speaking' : labels[state]}</div><div className="wave" aria-hidden="true">{Array.from({ length: 37 }, (_, i) => <i key={i} style={{ height: `${8 + Math.sin(i * 1.7) ** 2 * 26}px`, animationDelay: `${i * .055}s` }} />)}</div></div>
     </section>
 
     <section className="panel" aria-labelledby="panel-title">
@@ -99,7 +117,7 @@ function Experience() {
         {error && <p className="error" role="alert">{error}</p>}
       </div>
       <div className="transcript-wrap"><div className="transcript-heading"><span><AudioLines size={15} /> Live transcript</span><span>{messages.length ? `${messages.length} MESSAGES` : 'YOUR CONVERSATION'}</span></div><div className="transcript" ref={transcript} role="log" aria-live="polite" aria-label="Live conversation transcript">{messages.length ? messages.map((message, index) => <div className={`message ${message.role === 'You' ? 'user' : ''}`} key={index}><small>{message.role}</small><p>{message.text}</p></div>) : <div className="empty-transcript"><AudioLines size={26} /><p>Your conversation starts here.</p><span>Start a call to see the live transcript.</span></div>}</div></div>
-      <p className="notice">This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created. <span>Audio is processed by ElevenLabs. Avoid sharing sensitive information.</span></p>
+      <p className="notice">This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created. <span>Audio is processed by ElevenLabs and Simli. Avoid sharing sensitive information.</span></p>
     </section>
   </main>;
 }

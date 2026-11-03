@@ -33,3 +33,17 @@ Import this repository into Vercel using the Next.js preset. Set NEXT_PUBLIC_ELE
 This is an AI Receptionist portfolio demonstration. Conversations and appointment requests are simulated. No real appointment is created.
 
 Voice connection, speaking/listening state, transcript, mute and end-call controls are implemented against the SDK. Permission denial, missing microphone, connection failures, and disconnecting have explicit UI states. No live voice or browser device tests have been performed. The waveform indicates conversation state and is not an audio amplitude measurement or lip synchronization.
+
+## Simli live avatar
+
+The official `simli-client` SDK renders video and plays the existing ElevenLabs agent's generated audio. No second agent or TTS voice is created. The ElevenLabs WebRTC `onAudio` callback emits PCM16 at 48 kHz in the installed SDK; a streaming low-pass converter produces Simli's required 16 kHz mono PCM. ElevenLabs local playback is muted and Simli plays the synchronized audio/video. Agent interruptions clear the Simli buffer; end/disconnect/unmount stop the avatar session. The microphone and transcript still belong to ElevenLabs.
+
+Configure `SIMLI_API_KEY` as a server-only Vercel secret and `NEXT_PUBLIC_SIMLI_AVATAR_ID=9fcd5739-bf66-49a5-b525-d02d7f0bc2fc`. Never prefix the key with NEXT_PUBLIC. `POST /api/simli/session` calls the official Simli token API with the fixed avatar, a 10-minute maximum session and 2-minute idle timeout. It returns only a short-lived session token and rejects cross-origin requests. This is a public portfolio demo, not an authenticated or globally rate-limited service; monitor provider usage limits. No provider error bodies or keys are sent to clients.
+
+The avatar starts before the ElevenLabs conversation so initial voice audio is not lost. If avatar startup fails, the combined session does not start; there is no fake animated fallback. An idle placeholder is explicitly labeled. Browsers that block audio playback show an Enable avatar audio button.
+
+```sh
+node --experimental-strip-types --test tests/pcm.test.mjs
+```
+
+Official reference: https://github.com/simliai/simli-client and https://docs.simli.com/api-reference/javascript . Live avatar rendering, acoustic synchronization and physical microphone behavior require real-browser verification; audio-conversion unit tests and production builds do not establish those results.
