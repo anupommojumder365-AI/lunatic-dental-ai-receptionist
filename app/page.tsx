@@ -72,7 +72,6 @@ function Experience() {
       await conversation.startSession({ agentId, connectionType: 'webrtc' });
       if (!mounted.current) await endSession.current();
     } catch (cause) {
-      avatar.finish();
       if (!mounted.current) return;
       setPermission('idle');
       setError(cause instanceof DOMException && cause.name === 'NotAllowedError'
@@ -98,11 +97,13 @@ function Experience() {
     <section className="visual" aria-label="AI receptionist avatar">
       <div className="brand"><span>AI RECEPTIONIST</span><h2>Lunatic Dental Clinic</h2><p>Meet your AI receptionist. Ask questions about dental services or request an appointment through a natural voice conversation.</p></div>
       <div className="portrait simli-portrait">
-        <video ref={avatar.video} autoPlay playsInline muted aria-label="Live Simli receptionist avatar" className={avatar.status === 'ready' ? 'simli-video visible' : 'simli-video'} />
+        <video ref={avatar.video} autoPlay playsInline muted poster="/receptionist.jpg" onLoadedMetadata={avatar.playVideo} onLoadedData={avatar.videoReady} onPlaying={avatar.videoReady} aria-label="Live Simli receptionist avatar; photo preview until connected" className="simli-video" />
         <audio ref={avatar.audio} autoPlay onCanPlay={avatar.playAudio} onError={avatar.fail} />
-        {avatar.status !== 'ready' && <div className="avatar-placeholder"><AudioLines size={32} /><p>{avatar.status === 'connecting' ? 'Connecting live avatar…' : 'Your live receptionist'}</p><span>{avatar.status === 'connecting' ? 'Preparing synchronized video and voice' : 'The avatar appears when you start a conversation.'}</span></div>}
+        {!avatar.hasFrame && <div className="avatar-preview-label">{avatar.status === 'connecting' ? 'Connecting live avatar…' : 'Photo preview · live avatar loads when you start'}</div>}
         <div className="portrait-border" />
       </div>
+      {avatar.startupError && <p className="error" role="alert">{avatar.startupError}</p>}
+      {avatar.videoBlocked && <button className="avatar-audio-button" onClick={avatar.playVideo}>Show live avatar</button>}
       {avatar.playbackBlocked && <button className="avatar-audio-button" onClick={avatar.playAudio}>Enable avatar audio</button>}
       <div className="avatar-caption"><div className="avatar-status"><span className="status-dot" />{avatar.status === 'connecting' ? 'Connecting live avatar' : avatar.speaking ? 'Receptionist is speaking' : labels[state]}</div><div className="wave" aria-hidden="true">{Array.from({ length: 37 }, (_, i) => <i key={i} style={{ height: `${8 + Math.sin(i * 1.7) ** 2 * 26}px`, animationDelay: `${i * .055}s` }} />)}</div></div>
     </section>
